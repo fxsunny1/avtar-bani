@@ -4736,9 +4736,12 @@ tudh: "To You, before You — 'tudh agge ardas karan', I pray before You.", sab:
 
       function currentIndex() { return manualIndex; }
 
+      var lastRenderedNo = null; /* shabad no. of the previous render — used to detect a move to a new shabad */
       function render() {
         var idx = currentIndex();
         var s = SHABADS[idx];
+        var isNewShabad = lastRenderedNo !== null && lastRenderedNo !== s.no;
+        lastRenderedNo = s.no;
         if (window.__stopNarrationForNav) window.__stopNarrationForNav(s.no);
         var hasPrev = idx > 0, hasNext = idx < SHABADS.length - 1;
         document.querySelectorAll(".nav-prev").forEach(function (b) { b.disabled = !hasPrev; });
@@ -4770,6 +4773,15 @@ tudh: "To You, before You — 'tudh agge ardas karan', I pray before You.", sab:
         renderKeyWords(s);
         renderLineMeanings(s);
         renderDiscourse(s);
+        if (isNewShabad) {
+          /* A new shabad always starts with Line by line collapsed, even
+             if it was open on the previous shabad. Same-shabad re-renders
+             (font size, Key Words add/remove) leave it as the reader left
+             it, and the first render keeps any same-day restored state. */
+          els.lm.hidden = true;
+          var lmToggleEl = document.getElementById("lmToggle");
+          if (lmToggleEl) lmToggleEl.setAttribute("aria-expanded", "false");
+        }
         closeWordPanel();
         refreshKwExportLink();
         saveReadingPos();
@@ -4807,7 +4819,8 @@ tudh: "To You, before You — 'tudh agge ardas karan', I pray before You.", sab:
       })();
 
       /* Line by line — collapsible; starts collapsed, unless a same-day
-         reading position is being restored with it open. */
+         reading position is being restored with it open. Moving to a new
+         shabad always returns it to collapsed (see render()). */
       (function () {
         var toggle = document.getElementById("lmToggle");
         var box = document.getElementById("lineMeaningsBox");
